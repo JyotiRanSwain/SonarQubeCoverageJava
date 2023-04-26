@@ -22,9 +22,9 @@ pipeline {
                 SCANNER_HOME = tool 'sonar-scanner'
             }
             steps {
-                withSonarQubeEnv('sonarqube-9.9') {
+                withSonarQubeEnv('jenkins-sonar') {
                     sh" ${SCANNER_HOME}}/bin/sonar-scanner \
-                    -Dsonar.projectKey=demoproject \
+                   // -Dsonar.projectKey=demoproject \
                     -Dsonar.sources=. "
                 }
             }

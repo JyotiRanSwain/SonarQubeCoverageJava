@@ -1,38 +1,31 @@
-node(){
-	
-	def mvnHome = tool 'MavenBuildTool'
-	def sonarScannerHome = tool 'Scanner'
-	
-	try {
-		stage('Checkout Code'){
-			checkout scm
-		}
-		
-		stage('Maven Build'){
-			sh "${mvnHome}/bin/mvn clean install"
-		}
-		
-		stage('Test Cases Execution'){
-			sh "${mvnHome}/bin/mvn test"
-		}
-		
-		stage('SonarQube Analysis'){
-			/*withCredentials([string(credentialsId: 'SonarQubeToken', variable: 'SONARQUBE_TOKEN')]) {
-				//sh "${sonarScannerHome}/bin/sonar-scanner -Dsonar.host.url=http://35.172.192.145:9000/ -Dsonar.login=${SONARQUBE_TOKEN} -Dsonar.projectKey=com.example:java-example-project"
-			}*/
-		}
-		
-		stage('Archive Artifacts'){
-			archiveArtifacts artifacts: 'target/*.jar', followSymlinks: false
-		}
-	}
-	catch (Exception e){
-		currentBuild.result = 'FAILURE'
-		echo currentBuild.currentResult
-	}finally{
-		emailext attachLog: true, attachmentsPattern: 'target/surefire-reports/*.xml', 
-			 body: '''$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
-	Check console output at $BUILD_URL to view the results.''', 
-			compressLog: true, recipientProviders: [buildUser(), requestor()], subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!', to: 'anuj_sharma401@yahoo.com'
-	}
-}
+pipeline {
+    agent any
+    
+    tools {
+        maven 'local_maven'
+    }
+    stages{
+        stage('Build'){
+            steps {
+                sh 'mvn clean package'
+            }
+            post {
+                success {
+                    echo 'Archiving the artifacts'
+                    archiveArtifacts artifacts: 'target/*.jar'
+                }
+            }
+        }
+
+        stage('SonarQube analysis') {
+//    def scannerHome = tool 'sonar-scanner';
+        steps{
+        withSonarQubeEnv('sonarqube-9.9') { 
+        // If you have configured more than one global server connection, you can specify its name
+//      sh "${scannerHome}/bin/sonar-scanner"
+        sh "mvn sonar:sonar"
+    }
+        }
+        }
+            }
+        }
